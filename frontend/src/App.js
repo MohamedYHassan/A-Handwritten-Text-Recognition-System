@@ -3,9 +3,8 @@ import { toast } from 'react-toastify';
 import Loader from './components/Loader';
 import { MdCloudUpload, MdDelete } from 'react-icons/md';
 import Copy from './components/Copy';
+import axios from 'axios'; // Import axios
 import './App.css';
-
-
 
 function App() {
   const [image, setImage] = useState(null);
@@ -37,12 +36,25 @@ function App() {
     setIsLoading(false);
   };
 
-  const handleClick = () => {
+  const handleClick = async () => {
     if (!image) {
       toast.error('Please upload the image!');
       return;
     }
-    
+
+    try {
+      const formData = new FormData();
+      formData.append('image', image);
+      const response = await axios.post('http://localhost:4002/convert', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      setText(response.data.text);
+    } catch (error) {
+      console.error('Error occurred:', error);
+      toast.error('Error converting image to text. Please try again.');
+    }
   };
 
   useEffect(() => {
