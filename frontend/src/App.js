@@ -26,9 +26,12 @@ function App() {
 
   const handleChange = (event) => {
     setIsLoading(true);
-    setImage(URL.createObjectURL(event.target.files[0]));
+    const file = event.target.files[0];
+    setImage(file); // Set the file object directly
     setIsLoading(false);
   };
+  
+  
 
   const deleteImage = () => {
     setIsLoading(true);
@@ -41,21 +44,27 @@ function App() {
       toast.error('Please upload the image!');
       return;
     }
-
+  
     try {
       const formData = new FormData();
-      formData.append('image', image);
-      const response = await axios.post('http://localhost:4002/convert', formData, {
+      formData.append('image', image); // Append the file directly
+      const response = await axios.post('http://127.0.0.1:5000/convert', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
       });
       setText(response.data.text);
     } catch (error) {
-      console.error('Error occurred:', error);
-      toast.error('Error converting image to text. Please try again.');
+      if (error.response && error.response.data && error.response.data.error) {
+        // Display the error message from the server response
+        toast.error(error.response.data.error);
+      } else {
+        console.error('Error occurred:', error);
+        toast.error('Error converting image to text. Please try again.');
+      }
     }
   };
+  
 
   useEffect(() => {
     setText(text);
@@ -107,7 +116,8 @@ function App() {
               ) : (
                 <>
                   <div className="dispaly-image">
-                    <img src={image} alt="uploaded" className="uploaded-image" />
+                  <img src={image ? URL.createObjectURL(image) : ''} alt="uploaded" className="uploaded-image" />
+
                     <MdDelete className="delete-icon" onClick={deleteImage} />
                   </div>
                 </>
