@@ -16,9 +16,21 @@ function App() {
     event.preventDefault();
     setIsLoading(true);
     const file = event.dataTransfer.files[0];
-    setImage(URL.createObjectURL(file));
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const arrayBuffer = reader.result;
+        const blob = new Blob([arrayBuffer], { type: file.type });
+        setImage(blob); // Set the Blob object directly
+      };
+      reader.readAsArrayBuffer(file);
+    }
     setIsLoading(false);
   };
+  
+  
+  
+  
 
   const handleDragOver = (event) => {
     event.preventDefault();
@@ -48,6 +60,7 @@ function App() {
     try {
       const formData = new FormData();
       formData.append('image', image); // Append the file directly
+      console.log(image);
       const response = await axios.post('http://127.0.0.1:5000/convert', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
@@ -114,12 +127,17 @@ function App() {
                   </label>
                 </>
               ) : (
-                <>
+                <>{image && (
                   <div className="dispaly-image">
-                  <img src={image ? URL.createObjectURL(image) : ''} alt="uploaded" className="uploaded-image" />
-
+                    <img
+                      src={image instanceof Blob ? URL.createObjectURL(image) : image}
+                      alt="uploaded"
+                      className="uploaded-image"
+                    />
                     <MdDelete className="delete-icon" onClick={deleteImage} />
                   </div>
+                )}
+                
                 </>
               )}
             </>
