@@ -4,11 +4,13 @@ from model.preprocessor import TextImagePreprocessor
 from model.model import HTRModel
 import cv2
 import numpy as np
+from textblob import TextBlob
 from collections import namedtuple
 
 
 Batch = namedtuple('Batch', 'imgs, gt_texts, batch_size')
 CHAR_LIST = 'model/charList.txt'
+
 
 
 def preprocess_image(file):
@@ -36,8 +38,15 @@ def infer_image(img):
 
 
     recognized, probability = model.infer_batch(batch, True)
+    text = " ".join(recognized)
+    corrected = TextBlob(text).correct()
+    word_list = []
+    for word in corrected.split():
+        word_list.append(word + " ")  # Append word with a trailing space
 
-    return recognized, probability
+    print(word_list)
+
+    return recognized, probability, word_list
 
 
 

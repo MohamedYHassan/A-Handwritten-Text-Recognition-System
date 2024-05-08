@@ -11,6 +11,7 @@ function App() {
   const [text, setText] = useState(null);
   const [progress, setProgress] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+  const [additionalText, setAdditionalText] = useState(null); // Add the additional text state with a more descriptive initial value
 
   const handleDrop = (event) => {
     event.preventDefault();
@@ -27,10 +28,6 @@ function App() {
     }
     setIsLoading(false);
   };
-  
-  
-  
-  
 
   const handleDragOver = (event) => {
     event.preventDefault();
@@ -42,8 +39,6 @@ function App() {
     setImage(file); // Set the file object directly
     setIsLoading(false);
   };
-  
-  
 
   const deleteImage = () => {
     setIsLoading(true);
@@ -67,6 +62,7 @@ function App() {
         }
       });
       setText(response.data.text);
+      setAdditionalText(response.data.correction)
     } catch (error) {
       if (error.response && error.response.data && error.response.data.error) {
         // Display the error message from the server response
@@ -77,15 +73,15 @@ function App() {
       }
     }
   };
-  
 
   useEffect(() => {
     setText(text);
-  }, [text]);
+    setAdditionalText(additionalText)
+  }, [text][additionalText]);
 
   return (
     <>
-   <div className="menu">
+      <div className="menu">
         <ul>
           <li>IMAGE TO TEXT WEBSITE</li>
         </ul>
@@ -93,9 +89,7 @@ function App() {
       <div className="App" onDrop={handleDrop} onDragOver={handleDragOver}>
       
       </div>
-      <div className="App" onDrop={handleDrop} onDragOver={handleDragOver}>
-
-      </div>
+      
       <header>
         <h1 className="header">Image to Text Converter</h1>
       </header>
@@ -116,7 +110,6 @@ function App() {
                       <MdCloudUpload className="upload-icon" />
                       <p className="upload-text">Click here to upload</p>
                       <p className="upload-text">DRAG    &      DROP</p>
-    
                     </div>
                     <input
                       type="file"
@@ -127,18 +120,14 @@ function App() {
                   </label>
                 </>
               ) : (
-                <>{image && (
-                  <div className="dispaly-image">
-                    <img
-                      src={image instanceof Blob ? URL.createObjectURL(image) : image}
-                      alt="uploaded"
-                      className="uploaded-image"
-                    />
-                    <MdDelete className="delete-icon" onClick={deleteImage} />
-                  </div>
-                )}
-                
-                </>
+                <div className="dispaly-image">
+                  <img
+                    src={image instanceof Blob ? URL.createObjectURL(image) : image}
+                    alt="uploaded"
+                    className="uploaded-image"
+                  />
+                  <MdDelete className="delete-icon" onClick={deleteImage} />
+                </div>
               )}
             </>
           )}
@@ -155,7 +144,13 @@ function App() {
           </div>
         )}
 
-        {text && <Copy text={text} />}
+        {text && (
+          <>
+            <Copy text={text} /> {/* Display the extracted text */}
+            <Copy text={additionalText} />
+           
+          </>
+        )}
       </div>
     </>
   );

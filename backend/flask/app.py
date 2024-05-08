@@ -18,10 +18,10 @@ def convert_image_to_text():
     processed_image = preprocess_image(image_file)
 
     # Perform text recognition (placeholder)
-    text , probability= infer_image(processed_image)
+    text , probability, correction= infer_image(processed_image)
 
     # Return the recognized text
-    return jsonify({'message': 'Image processed successfully', 'text': text})
+    return jsonify({'message': 'Image processed successfully', 'text': text, 'correction':correction})
 
 if __name__ == '__main__':
     app.run(debug=True)
