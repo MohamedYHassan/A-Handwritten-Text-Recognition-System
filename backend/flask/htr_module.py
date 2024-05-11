@@ -6,10 +6,13 @@ import cv2
 import numpy as np
 from textblob import TextBlob
 from collections import namedtuple
+from symspellpy import SymSpell
+import pkg_resources
 
 
 Batch = namedtuple('Batch', 'imgs, gt_texts, batch_size')
 CHAR_LIST = 'model/charList.txt'
+
 
 
 
@@ -37,16 +40,34 @@ def infer_image(img):
     model = HTRModel(char_list_from_file(),decoder_type=1,must_restore=True,dump=False)
 
 
-    recognized, probability = model.infer_batch(batch, True)
+    recognized, probability  = model.infer_batch(batch, True)
     text = " ".join(recognized)
-    corrected = TextBlob(text).correct()
-    word_list = []
-    for word in corrected.split():
-        word_list.append(word + " ")  # Append word with a trailing space
+    sym_spell = SymSpell(max_dictionary_edit_distance=2, prefix_length=7)
+    dictionary_path = pkg_resources.resource_filename(
+    "symspellpy", "frequency_dictionary_en_82_765.txt")
+    bigram_path = pkg_resources.resource_filename(
+    "symspellpy", "frequency_bigramdictionary_en_243_342.txt")
+    
+    sym_spell.load_dictionary(dictionary_path, term_index=0, count_index=1)
+    suggestions = sym_spell.lookup_compound(text, max_edit_distance=2)
+    corrected = ""
+    for suggestion in suggestions:
+        print(suggestion)
+        corrected += str(suggestion)
 
-    print(word_list)
+    print(corrected)
+    split_text = corrected.split(",", 1)
 
-    return recognized, probability, word_list
+
+
+    # corrected = TextBlob(text).correct()
+    # word_list = []
+    # for word in corrected.split():
+    #     word_list.append(word + " ")  # Append word with a trailing space
+
+    # print(word_list)
+
+    return recognized, probability, split_text[0]
 
 
 

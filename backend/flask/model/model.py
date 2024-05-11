@@ -2,13 +2,21 @@ from collections import namedtuple
 import os
 import sys
 from typing import List, Tuple
-
+from transformers import pipeline
 import numpy as np
 import tensorflow as tf
+# import spacy
+from collections import defaultdict
+
+
 
 Batch = namedtuple('Batch', 'imgs, gt_texts, batch_size')
 # Disable eager mode
 tf.compat.v1.disable_eager_execution()
+# nlp = spacy.load("en_core_web_sm")
+# english_words = words.words('en')
+
+
 
 class DecoderType:
     """CTC decoder types."""
@@ -242,6 +250,36 @@ class HTRModel:
             with open(fn, 'w') as f:
                 f.write(csv)
 
+
+    # @tf.function
+    # def text_postprocessing(self,texts):
+    #     text_generation_pipeline = pipeline("text-generation", model="gpt2")
+    #     corrected_texts = []
+    #     for text in texts:
+    #         correction = text_generation_pipeline(text_inputs=text, max_length=50)
+    #         generated_sequence = correction[0]['generated_text'].numpy()  # Assuming it's convertible
+    #         corrected_texts.append(generated_sequence.tolist())
+
+    #     return corrected_texts
+
+
+
+    
+        
+
+
+    
+    
+
+
+
+    
+
+
+
+
+
+
     def infer_batch(self, batch: Batch, calc_probability: bool = False, probability_of_gt: bool = False):
         """Feed a batch into the NN to recognize the texts."""
 
@@ -254,7 +292,6 @@ class HTRModel:
         if self.decoder_type == DecoderType.WordBeamSearch:
             eval_list.append(self.wbs_input)
         else:
-            
             eval_list.append(self.decoder)
 
         if self.dump or calc_probability:
@@ -265,7 +302,7 @@ class HTRModel:
 
         # Dictionary containing all tensors fed into the model
         feed_dict = {self.input_imgs: batch.imgs, self.seq_len: [max_text_len] * num_batch_elements,
-                     self.is_train: False}
+                    self.is_train: False}
 
         # Evaluate model
         eval_res = self.sess.run(eval_list, feed_dict)
@@ -281,6 +318,10 @@ class HTRModel:
         texts = self.decoder_output_to_text(decoded, num_batch_elements)
 
 
+
+
+ 
+
         # feed RNN output and recognized text into CTC loss to compute labeling probability
         probs = None
         if calc_probability:
@@ -288,14 +329,19 @@ class HTRModel:
             ctc_input = eval_res[1]
             eval_list = self.loss_per_element
             feed_dict = {self.saved_ctc_input: ctc_input, self.gt_texts: sparse,
-                         self.seq_len: [max_text_len] * num_batch_elements, self.is_train: False}
+                        self.seq_len: [max_text_len] * num_batch_elements, self.is_train: False}
             loss_vals = self.sess.run(eval_list, feed_dict)
             probs = np.exp(-loss_vals)
+
+            # corrected_texts = self.text_postprocessing(texts)
 
         # dump the output of the NN to CSV file(s)
         if self.dump:
             self.dump_nn_output(eval_res[1])
 
+
+
+        # Return results
         return texts, probs
 
     def save(self) -> None:

@@ -58,7 +58,8 @@ function App() {
       console.log(image);
       const response = await axios.post('http://127.0.0.1:5000/convert', formData, {
         headers: {
-          'Content-Type': 'multipart/form-data'
+          'Content-Type': 'multipart/form-data',
+          'Access-Control-Allow-Origin': '*'
         }
       });
       setText(response.data.text);

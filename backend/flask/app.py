@@ -3,7 +3,7 @@ from flask_cors import CORS
 from htr_module import preprocess_image, infer_image
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, origins=['http://localhost:3000'])  # Allow requests from localhost:3000 only
 
 @app.route('/convert', methods=['POST'])
 def convert_image_to_text():
@@ -18,10 +18,10 @@ def convert_image_to_text():
     processed_image = preprocess_image(image_file)
 
     # Perform text recognition (placeholder)
-    text , probability, correction= infer_image(processed_image)
+    text , probability, corrected= infer_image(processed_image)
 
     # Return the recognized text
-    return jsonify({'message': 'Image processed successfully', 'text': text, 'correction':correction})
+    return jsonify({'message': 'Image processed successfully', 'text': text, 'correction':corrected})
 
 if __name__ == '__main__':
     app.run(debug=True)
