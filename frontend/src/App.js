@@ -12,6 +12,7 @@ function App() {
   const [progress, setProgress] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [additionalText, setAdditionalText] = useState(null); // Add the additional text state with a more descriptive initial value
+  const [confidence, setConfidence] = useState(null);
 
   const handleDrop = (event) => {
     event.preventDefault();
@@ -62,8 +63,10 @@ function App() {
           'Access-Control-Allow-Origin': '*'
         }
       });
+      console.log(response.data.confidence);
       setText(response.data.text);
       setAdditionalText(response.data.correction)
+      setConfidence(response.data.confidence)
     } catch (error) {
       if (error.response && error.response.data && error.response.data.error) {
         // Display the error message from the server response
@@ -77,8 +80,9 @@ function App() {
 
   useEffect(() => {
     setText(text);
-    setAdditionalText(additionalText)
-  }, [text][additionalText]);
+    setAdditionalText(additionalText);
+    setConfidence(confidence)
+  }, [text, additionalText, confidence]);
 
   return (
     <>
@@ -148,7 +152,8 @@ function App() {
         {text && (
           <>
             <Copy text={text} /> {/* Display the extracted text */}
-            <Copy text={additionalText} />
+            <Copy text={additionalText} /> {}
+            <Copy text={confidence}/>{}
            
           </>
         )}

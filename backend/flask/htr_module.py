@@ -55,7 +55,8 @@ def infer_image(img):
         print(suggestion)
         corrected += str(suggestion)
 
-    print(corrected)
+    probability_str = str(probability[0])
+    print(probability_str)
     split_text = corrected.split(",", 1)
 
 
@@ -67,7 +68,7 @@ def infer_image(img):
 
     # print(word_list)
 
-    return recognized, probability, split_text[0]
+    return recognized, probability_str, split_text[0]
 
 
 

@@ -20,8 +20,9 @@ def convert_image_to_text():
     # Perform text recognition (placeholder)
     text , probability, corrected= infer_image(processed_image)
 
+
     # Return the recognized text
-    return jsonify({'message': 'Image processed successfully', 'text': text, 'correction':corrected})
+    return jsonify({'message': 'Image processed successfully', 'text': text, 'correction':corrected, 'confidence':probability})
 
 if __name__ == '__main__':
     app.run(debug=True)
