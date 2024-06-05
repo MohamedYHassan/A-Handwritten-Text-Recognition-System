@@ -3,7 +3,7 @@ import { toast } from 'react-toastify';
 import Loader from './components/Loader';
 import { MdCloudUpload, MdDelete } from 'react-icons/md';
 import Copy from './components/Copy';
-import axios from 'axios'; // Import axios
+import axios from 'axios'; 
 import './App.css';
 
 function App() {
@@ -11,8 +11,9 @@ function App() {
   const [text, setText] = useState(null);
   const [progress, setProgress] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
-  const [additionalText, setAdditionalText] = useState(null); // Add the additional text state with a more descriptive initial value
+  const [additionalText, setAdditionalText] = useState(null);
   const [confidence, setConfidence] = useState(null);
+  const [errorMessage, setErrorMessage] = useState(null);
 
   const handleDrop = (event) => {
     event.preventDefault();
@@ -37,7 +38,7 @@ function App() {
   const handleChange = (event) => {
     setIsLoading(true);
     const file = event.target.files[0];
-    setImage(file); // Set the file object directly
+    setImage(file); 
     setIsLoading(false);
   };
 
@@ -49,13 +50,13 @@ function App() {
 
   const handleClick = async () => {
     if (!image) {
-      toast.error('Please upload the image!');
+      setErrorMessage('Please upload the image!');
       return;
     }
   
     try {
       const formData = new FormData();
-      formData.append('image', image); // Append the file directly
+      formData.append('image', image); 
       console.log(image);
       const response = await axios.post('http://127.0.0.1:5000/convert', formData, {
         headers: {
@@ -67,13 +68,14 @@ function App() {
       setText(response.data.text);
       setAdditionalText(response.data.correction)
       setConfidence(response.data.confidence)
+      setErrorMessage(null);
     } catch (error) {
       if (error.response && error.response.data && error.response.data.error) {
-        // Display the error message from the server response
-        toast.error(error.response.data.error);
+      
+        setErrorMessage(error.response.data.error); 
       } else {
-        console.error('Error occurred:', error);
-        toast.error('Error converting image to text. Please try again.');
+        setErrorMessage('Error Converting Image To Text . Please Try Again.'); 
+
       }
     }
   };
@@ -99,6 +101,7 @@ function App() {
         <h1 className="header">Image to Text Converter</h1>
       </header>
       <div className="container">
+      {errorMessage && <div className="error-message">{errorMessage}</div>}
         <div
           className="group"
           onDrop={handleDrop}
