@@ -10,12 +10,15 @@ export default function Copy({ text }) {
 
   useEffect(() => {
     setValue(text);
-    const timeout = setTimeout(() => {
-      setMessage("");
-    }, 3000);
+    if (isCopied) {
+      const timeout = setTimeout(() => {
+        setCopied(false);
+        setMessage("");
+      }, 2000); 
 
-    return () => clearTimeout(timeout);
-  }, [text]);
+      return () => clearTimeout(timeout);
+    }
+  }, [text, isCopied]);
 
   return (
     <div>
