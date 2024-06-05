@@ -151,10 +151,23 @@ function App() {
 
         {text && (
           <>
-            <Copy text={text} /> {/* Display the extracted text */}
-            <Copy text={additionalText} /> {}
-            <Copy text={confidence}/>{}
-           
+          <span className="container">
+          <label className="label"> Text
+          <Copy text={text} /> 
+          </label>
+          </span>
+          <span className="container">
+          <label className="label"> Auto Correct
+         
+          <Copy text={additionalText} /> {}
+          </label>
+          </span>
+          <span className="container">
+          <label className="label"> Probability 
+          <Copy text={confidence}/>{}
+          </label>
+          </span>
+    
           </>
         )}
       </div>

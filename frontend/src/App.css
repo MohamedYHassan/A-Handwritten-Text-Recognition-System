@@ -77,6 +77,34 @@ p {
   font-size: calc(7px + 2vmin);
   color: white;
 }
+.container {
+  display: block;
+  margin: 10px 0;
+}
+
+.label {
+ 
+  font-size: 16px;
+  color: #333;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  display: inline-block;
+  background-color: #f9f9f9;
+}
+
+.label .copy {
+  
+  font-weight: bold;
+  color: #007BFF;
+  cursor: pointer;
+  margin-left: 5px;
+}
+
+.label .copy:hover {
+  color: #0056b3;
+}
+
 
 .text-box {
   background: #fff;
