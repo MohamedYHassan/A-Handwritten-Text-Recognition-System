@@ -2,33 +2,39 @@ import React, { useState, useEffect } from "react";
 import { CopyToClipboard } from "react-copy-to-clipboard";
 import { MdContentCopy } from "react-icons/md";
 import "../App.css";
-import { toast } from "react-toastify";
-
 
 export default function Copy({ text }) {
   const [value, setValue] = useState("Try copy this :) Button UI will change!");
   const [isCopied, setCopied] = useState(false);
+  const [message, setMessage] = useState("");
 
   useEffect(() => {
     setValue(text);
     const timeout = setTimeout(() => {
-      setCopied(false);
+      setMessage("");
     }, 3000);
 
     return () => clearTimeout(timeout);
-  }, [isCopied, text]);
+  }, [text]);
 
   return (
     <div>
       <p className="textbox">
         {value}
         <div role="button" tabIndex={0}>
-          <CopyToClipboard text={text} onCopy={() => setCopied(true)}>
+          <CopyToClipboard text={text} onCopy={() => {
+            setCopied(true);
+            setMessage("Copied!");
+          }}>
             <MdContentCopy
-              onClick={() => toast.success("copied")}
+              onClick={() => {
+                setCopied(true);
+                setMessage("Copied");
+              }}
               style={{ cursor: "pointer" }}
             />
           </CopyToClipboard>
+          {message && <span>{message}</span>}
         </div>
       </p>
     </div>
