@@ -4,7 +4,6 @@ from model.preprocessor import TextImagePreprocessor
 from model.model import HTRModel
 import cv2
 import numpy as np
-from textblob import TextBlob
 from collections import namedtuple
 from symspellpy import SymSpell
 import pkg_resources
@@ -60,13 +59,6 @@ def infer_image(img):
     split_text = corrected.split(",", 1)
 
 
-
-    # corrected = TextBlob(text).correct()
-    # word_list = []
-    # for word in corrected.split():
-    #     word_list.append(word + " ")  # Append word with a trailing space
-
-    # print(word_list)
 
     return recognized, probability_str, split_text[0]
 

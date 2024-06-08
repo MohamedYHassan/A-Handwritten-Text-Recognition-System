@@ -2,10 +2,8 @@ from collections import namedtuple
 import os
 import sys
 from typing import List, Tuple
-from transformers import pipeline
 import numpy as np
 import tensorflow as tf
-# import spacy
 from collections import defaultdict
 
 
@@ -13,26 +11,21 @@ from collections import defaultdict
 Batch = namedtuple('Batch', 'imgs, gt_texts, batch_size')
 # Disable eager mode
 tf.compat.v1.disable_eager_execution()
-# nlp = spacy.load("en_core_web_sm")
-# english_words = words.words('en')
-
 
 
 class DecoderType:
-    """CTC decoder types."""
+
     BestPath = 0
     BeamSearch = 1
-    WordBeamSearch = 2
 
 class HTRModel:
-    """Minimalistic TF model for HTR."""
 
     def __init__(self,
                  char_list: List[str],
                  decoder_type: int = DecoderType.BestPath,
                  must_restore: bool = False,
                  dump: bool = False) -> None:
-        """Initialize the model: add CNN, RNN, and CTC, and initialize TensorFlow."""
+        
         self.dump = dump
         self.char_list = char_list
         self.decoder_type = decoder_type
@@ -41,18 +34,16 @@ class HTRModel:
 
 
 
-        # Whether to use normalization over a batch or a population
         self.is_train = tf.compat.v1.placeholder(tf.bool, name='is_train')
 
-        # Input image batch
         self.input_imgs = tf.compat.v1.placeholder(tf.float32, shape=(None, None, None))
 
-        # Setup CNN, RNN, and CTC
+        # Setup CNN-RNN-CTC
         self.setup_cnn()
         self.setup_rnn()
         self.setup_ctc()
 
-        # Setup optimizer to train NN
+        # Setup Adam optimizer
         self.batches_trained = 0
         self.update_ops = tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.UPDATE_OPS)
         with tf.control_dependencies(self.update_ops):
@@ -62,16 +53,16 @@ class HTRModel:
         self.sess, self.saver = self.setup_tf()
 
     def setup_cnn(self) -> None:
-        """Create CNN layers."""
+
         cnn_in4d = tf.expand_dims(input=self.input_imgs, axis=3)
 
-        # List of parameters for the layers
+        # List of parameters
         kernel_vals = [5, 5, 3, 3, 3]
         feature_vals = [1, 32, 64, 128, 128, 256]
         stride_vals = pool_vals = [(2, 2), (2, 2), (1, 2), (1, 2), (1, 2)]
         num_layers = len(stride_vals)
 
-        # Create layers
+        # Creating the layers
         pool = cnn_in4d  # Input to the first CNN layer
         for i in range(num_layers):
             kernel = tf.Variable(
@@ -86,15 +77,15 @@ class HTRModel:
         self.cnn_out_4d = pool
 
     def setup_rnn(self) -> None:
-        """Create RNN layers."""
+
         rnn_in3d = tf.squeeze(self.cnn_out_4d, axis=[2])
 
-        # Basic cells used to build RNN
+        # LSTM cells used to build multiRNN
         num_hidden = 256
         cells = [tf.compat.v1.nn.rnn_cell.LSTMCell(num_units=num_hidden, state_is_tuple=True) for _ in
                  range(2)]  # 2 layers
 
-        # Stack basic cells
+        # Stack LSTM cells
         stacked = tf.compat.v1.nn.rnn_cell.MultiRNNCell(cells, state_is_tuple=True)
 
         # Bidirectional RNN
@@ -105,13 +96,13 @@ class HTRModel:
         # BxTxH + BxTxH -> BxTx2H -> BxTx1x2H
         concat = tf.expand_dims(tf.concat([fw, bw], 2), 2)
 
-        # Project output to chars (including blank): BxTx1x2H -> BxTx1xC -> BxTxC
+        # Project output to chars (including blank token): BxTx1x2H -> BxTx1xC -> BxTxC
         kernel = tf.Variable(tf.random.truncated_normal([1, 1, num_hidden * 2, len(self.char_list) + 1], stddev=0.1))
         self.rnn_out_3d = tf.squeeze(tf.nn.atrous_conv2d(value=concat, filters=kernel, rate=1, padding='SAME'),
                                      axis=[2])
 
     def setup_ctc(self) -> None:
-        """Create CTC loss and decoder."""
+
         # BxTxC -> TxBxC
         self.ctc_in_3d_tbc = tf.transpose(a=self.rnn_out_3d, perm=[1, 0, 2])
         # Ground truth text as sparse tensor
@@ -138,31 +129,19 @@ class HTRModel:
         elif self.decoder_type == DecoderType.BeamSearch:
             self.decoder = tf.nn.ctc_beam_search_decoder(inputs=self.ctc_in_3d_tbc, sequence_length=self.seq_len,
                                                          beam_width=50)
-        # Word beam search decoding
-        elif self.decoder_type == DecoderType.WordBeamSearch:
-            chars = ''.join(self.char_list)
-            word_chars = open('../model/wordCharList.txt').read().splitlines()[0]
-            corpus = open('../data/corpus.txt').read()
-
-            from word_beam_search import WordBeamSearch
-            self.decoder = WordBeamSearch(50, 'Words', 0.0, corpus.encode('utf8'), chars.encode('utf8'),
-                                          word_chars.encode('utf8'))
-
-            # The input to the decoder must have softmax already applied
-            self.wbs_input = tf.nn.softmax(self.ctc_in_3d_tbc, axis=2)
-
+            
+       
     def setup_tf(self) -> Tuple[tf.compat.v1.Session, tf.compat.v1.train.Saver]:
-        """Initialize TensorFlow."""
+
         print('Python: ' + sys.version)
         print('TensorFlow: ' + tf.__version__)
 
         sess = tf.compat.v1.Session()  # TensorFlow session
 
-        saver = tf.compat.v1.train.Saver(max_to_keep=1)  # Saver saves model to file
+        saver = tf.compat.v1.train.Saver(max_to_keep=1) 
         model_dir = '/Users/fofejo/Documents/GitHub/GP/backend/flask/model/checkpoint'
         latest_snapshot = tf.train.latest_checkpoint(model_dir)  # Check for a saved model
 
-        # If the model must be restored (for inference), there must be a snapshot
         if self.must_restore and not latest_snapshot:
             raise Exception('No saved model found in: ' + model_dir)
 
@@ -177,10 +156,10 @@ class HTRModel:
         return sess, saver
 
     def to_sparse(self, texts: List[str]) -> Tuple[List[List[int]], List[int], List[int]]:
-        """Put ground truth texts into a sparse tensor for ctc_loss."""
+
         indices = []
         values = []
-        shape = [len(texts), 0]  # Last entry must be max(labelList[i])
+        shape = [len(texts), 0] 
 
         # Iterate over all texts
         for batch_element, text in enumerate(texts):
@@ -197,31 +176,24 @@ class HTRModel:
         return indices, values, shape
 
     def decoder_output_to_text(self, ctc_output: tuple, batch_size: int) -> List[str]:
-        """Extract texts from the output of CTC decoder."""
 
-        # Word beam search: already contains label strings
-        if self.decoder_type == DecoderType.WordBeamSearch:
-            label_strs = ctc_output
+        # CTC returns a tuple, the first element is SparseTensor
+        decoded = ctc_output[0][0]
 
-        # TensorFlow decoders: label strings are contained in a sparse tensor
-        else:
-            # CTC returns a tuple, the first element is SparseTensor
-            decoded = ctc_output[0][0]
+        # Contains a string of labels for each batch element
+        label_strs = [[] for _ in range(batch_size)]
 
-            # Contains a string of labels for each batch element
-            label_strs = [[] for _ in range(batch_size)]
-
-            # Go over all indices and save mapping: batch -> values
-            for (idx, idx2d) in enumerate(decoded.indices):
-                label = decoded.values[idx]
-                batch_element = idx2d[0]  # Index according to [b,t]
-                label_strs[batch_element].append(label)
+        # Go over all indices and save mapping: batch -> values
+        for (idx, idx2d) in enumerate(decoded.indices):
+            label = decoded.values[idx]
+            batch_element = idx2d[0]  # Index according to [b,t]
+            label_strs[batch_element].append(label)
 
         # Map labels to chars for all batch elements
         return [''.join([self.char_list[c] for c in labelStr]) for labelStr in label_strs]
 
     def train_batch(self, batch: Batch) -> float:
-        """Feed a batch into the NN to train it."""
+
         num_batch_elements = len(batch.imgs)
         max_text_len = batch.imgs[0].shape[0] // 4
         sparse = self.to_sparse(batch.gt_texts)
@@ -234,7 +206,7 @@ class HTRModel:
 
     @staticmethod
     def dump_nn_output(rnn_output: np.ndarray) -> None:
-        """Dump the output of the NN to CSV file(s)."""
+
         dump_dir = '../dump/'
         if not os.path.isdir(dump_dir):
             os.mkdir(dump_dir)
@@ -251,48 +223,15 @@ class HTRModel:
                 f.write(csv)
 
 
-    # @tf.function
-    # def text_postprocessing(self,texts):
-    #     text_generation_pipeline = pipeline("text-generation", model="gpt2")
-    #     corrected_texts = []
-    #     for text in texts:
-    #         correction = text_generation_pipeline(text_inputs=text, max_length=50)
-    #         generated_sequence = correction[0]['generated_text'].numpy()  # Assuming it's convertible
-    #         corrected_texts.append(generated_sequence.tolist())
-
-    #     return corrected_texts
-
-
-
-    
-        
-
-
-    
-    
-
-
-
-    
-
-
-
-
-
 
     def infer_batch(self, batch: Batch, calc_probability: bool = False, probability_of_gt: bool = False):
-        """Feed a batch into the NN to recognize the texts."""
 
-        # Decode and optionally save RNN output
         num_batch_elements = len(batch.imgs)
 
         # Put tensors to be evaluated into a list
         eval_list = []
 
-        if self.decoder_type == DecoderType.WordBeamSearch:
-            eval_list.append(self.wbs_input)
-        else:
-            eval_list.append(self.decoder)
+        eval_list.append(self.decoder)
 
         if self.dump or calc_probability:
             eval_list.append(self.ctc_in_3d_tbc)
@@ -307,20 +246,11 @@ class HTRModel:
         # Evaluate model
         eval_res = self.sess.run(eval_list, feed_dict)
 
-        # TensorFlow decoders: decoding already done in TensorFlow graph
-        if self.decoder_type != DecoderType.WordBeamSearch:
-            decoded = eval_res[0]
-        # Word beam search decoder: decoding is done in C++ function compute()
-        else:
-            decoded = self.decoder.compute(eval_res[0])
+        decoded = eval_res[0]
 
         # Map labels (numbers) to character string
         texts = self.decoder_output_to_text(decoded, num_batch_elements)
 
-
-
-
- 
 
         # feed RNN output and recognized text into CTC loss to compute labeling probability
         probs = None
@@ -333,18 +263,14 @@ class HTRModel:
             loss_vals = self.sess.run(eval_list, feed_dict)
             probs = np.exp(-loss_vals)
 
-            # corrected_texts = self.text_postprocessing(texts)
 
-        # dump the output of the NN to CSV file(s)
         if self.dump:
             self.dump_nn_output(eval_res[1])
-
-
 
         # Return results
         return texts, probs
 
     def save(self) -> None:
-        """Save model to file."""
+        
         self.snap_ID += 1
         self.saver.save(self.sess, '../model/snapshot', global_step=self.snap_ID)

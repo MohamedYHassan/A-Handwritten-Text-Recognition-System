@@ -17,7 +17,7 @@ def convert_image_to_text():
     # Preprocess the image
     processed_image = preprocess_image(image_file)
 
-    # Perform text recognition (placeholder)
+    # Perform text recognition
     text , probability, corrected= infer_image(processed_image)
 
 

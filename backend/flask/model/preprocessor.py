@@ -13,7 +13,7 @@ class TextImagePreprocessor:
                  dynamic_width: bool = False,
                  apply_data_augmentation: bool = False,
                  line_mode: bool = False) -> None:
-        # Dynamic width only supported when no data augmentation happens
+        # Dynamic width only when no data augmentation happens
         assert not (dynamic_width and apply_data_augmentation)
         # When padding is on, we need dynamic width enabled
         assert not (padding > 0 and not dynamic_width)
@@ -27,9 +27,8 @@ class TextImagePreprocessor:
    
    
     def process_image(self, image: np.ndarray) -> np.ndarray:
-        """Resize to the target size and apply data augmentation."""
 
-        # There are damaged files in the IAM dataset - just use a black image instead
+        # There are damaged files in IAM dataset - use a black image instead
         if image is None:
             image = np.zeros(self.target_image_size[::-1])
 
@@ -96,7 +95,6 @@ class TextImagePreprocessor:
             target = np.ones([height_target, width_target]) * 255
             image = cv2.warpAffine(image, M, dsize=(width_target, height_target), dst=target, borderMode=cv2.BORDER_TRANSPARENT)
 
-        # Transpose for TensorFlow
         image = cv2.transpose(image)
 
         # Convert to range [-1, 1]
@@ -105,19 +103,19 @@ class TextImagePreprocessor:
 
     
 
-def main():
-    import matplotlib.pyplot as plt
+# def main():
+#     import matplotlib.pyplot as plt
 
-    image = cv2.imread('/Users/fofejo/Desktop/test4.png', cv2.IMREAD_GRAYSCALE)
-    preprocessor = TextImagePreprocessor(target_image_size=(256, 32), apply_data_augmentation=True)
-    augmented_image = preprocessor.process_image(image)
+#     image = cv2.imread('/Users/fofejo/Desktop/test4.png', cv2.IMREAD_GRAYSCALE)
+#     preprocessor = TextImagePreprocessor(target_image_size=(256, 32), apply_data_augmentation=True)
+#     augmented_image = preprocessor.process_image(image)
 
-    # plt.subplot(121)
-    # plt.imshow(image, cmap='gray')
-    # plt.subplot(122)
-    # plt.imshow(cv2.transpose(augmented_image) + 0.5, cmap='gray', vmin=0, vmax=1)
-    # plt.show()
+#     # plt.subplot(121)
+#     # plt.imshow(image, cmap='gray')
+#     # plt.subplot(122)
+#     # plt.imshow(cv2.transpose(augmented_image) + 0.5, cmap='gray', vmin=0, vmax=1)
+#     # plt.show()
 
 
-if __name__ == '__main__':
-    main()
+# if __name__ == '__main__':
+#     main()
