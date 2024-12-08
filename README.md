@@ -1,5 +1,6 @@
 # A Handwritten Text Recognition System
 
+Our Graduation Project For Helwan University 2024
 
 ## Installation
 
